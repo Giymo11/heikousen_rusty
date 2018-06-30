@@ -10,16 +10,15 @@ extern crate image;
 mod engine;
 
 
-use std::sync::Arc;
-
 
 fn main() {
     println!("Hello, world!");
 
-    let (instance, device, queue) = engine::initialize();
+    let (instance, device, allround_queue, compute_queue, transfer_queue) = engine::initialize();
 
-    engine::make_mandelbrot(device.clone(), queue.clone(), 1024, "image2.png");
+    engine::compute_mandelbrot::make_mandelbrot(device.clone(), allround_queue.clone(), 1024, "image2.png");
 
+    engine::graphics_triangle::make_triangle(device.clone(), allround_queue.clone(), 1024, "triangle.png");
 
-
+    // TODO: extract the <image creation and the writing of the buffer to disk> into separate functions
 }
