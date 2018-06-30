@@ -6,6 +6,9 @@ extern crate vulkano_shader_derive;
 
 extern crate image;
 
+extern crate winit;
+extern crate vulkano_win;
+
 
 mod engine;
 

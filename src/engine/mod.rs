@@ -4,7 +4,7 @@ use vulkano::instance::Instance;
 use vulkano::instance::PhysicalDevice;
 use vulkano::device::Device;
 use vulkano::device::Queue;
-
+use vulkano::instance::LayerProperties;
 
 pub mod compute_mandelbrot;
 
@@ -12,12 +12,39 @@ pub mod graphics_triangle;
 
 
 pub fn initialize() -> (Arc<Instance>, Arc<Device>, Arc<Queue>, Arc<Queue>, Arc<Queue>) {
+
     use vulkano::instance::InstanceExtensions;
+    use vulkano_win;
+
+    let extensions = InstanceExtensions {
+        ext_debug_report: true,
+        ..vulkano_win::required_extensions()
+    };
+
+
+    use vulkano::instance;
+
+    println!("List of Vulkan debugging layers available to use:");
+    let layers: Vec<_> = instance::layers_list().unwrap().collect();
+
+    for l in &layers {
+        println!("\t{}", l.name());
+    }
+
+
+    let layer = layers.iter().find(|ref x| x.name() == "VK_LAYER_LUNARG_standard_validation");
+
+    match layer {
+        Some(layer) => println!("Found debug layer:\n\t{}\n", layer.name()),
+        None => println!("Found no debug layer"),
+    }
+
+    let used_layers = layer.map(|ref x| x.name().to_owned().as_str());
 
     let instance = Instance::new(
         None,
-        &InstanceExtensions::none(),
-        None)
+        &extensions,
+        used_layers)
         .expect("failed to create instance");
 
     let physical = PhysicalDevice::enumerate(&instance)

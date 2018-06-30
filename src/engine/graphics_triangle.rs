@@ -43,22 +43,61 @@ struct Vertex {
 impl_vertex!(Vertex, position);
 
 
-pub fn make_triangle(device: Arc<Device>, queue: Arc<Queue>, size: u32, path: &str) {
+use vulkano::image::StorageImage;
+use vulkano::buffer::CpuAccessibleBuffer;
 
-    let vs = vs::Shader::load(device.clone()).expect("failed to create shader module");
-    let fs = fs::Shader::load(device.clone()).expect("failed to create shader module");
+use vulkano::format::FormatDesc;
+use vulkano::memory::Content;
 
+use vulkano::image::Dimensions;
+use vulkano::format::Format;
+
+use vulkano::buffer::BufferUsage;
+
+/*
+fn make_image_and_buf<T, F>(device: Arc<Device>, queue: Arc<Queue>, size: u32) ->
+    (Arc<StorageImage<F>>, Arc<CpuAccessibleBuffer<[T]>>)
+    where F: FormatDesc, T: Content + 'static {
 
     use vulkano::image::Dimensions;
-    use vulkano::image::StorageImage;
     use vulkano::format::Format;
 
     let image = StorageImage::new(device.clone(), Dimensions::Dim2d { width: size, height: size },
                                   Format::R8G8B8A8Unorm, Some(queue.family())).unwrap();
 
+
+    use vulkano::buffer::BufferUsage;
+
     let buf = CpuAccessibleBuffer::from_iter(device.clone(), BufferUsage::all(),
                                              (0 .. size * size * 4).map(|_| 0u8))
         .expect("failed to create buffer");
+
+
+    (image, buf)
+}
+*/
+
+pub fn make_triangle(device: Arc<Device>, queue: Arc<Queue>, size: u32, path: &str) {
+
+    let vs = vs::Shader::load(device.clone()).expect("failed to create shader module");
+    let fs = fs::Shader::load(device.clone()).expect("failed to create shader module");
+
+    // let (image, buf) = make_image_and_buf(device.clone(), queue.clone(), size);
+
+    let image = StorageImage::new(
+        device.clone(),
+        Dimensions::Dim2d { width: size, height: size },
+        Format::R8G8B8A8Unorm,
+        Some(queue.family()))
+        .unwrap();
+
+
+    let buf = CpuAccessibleBuffer::from_iter(
+        device.clone(),
+        BufferUsage::all(),
+        (0 .. size * size * 4).map(|_| 0u8))
+        .expect("failed to create buffer");
+
 
 
     let render_pass = Arc::new(single_pass_renderpass!(device.clone(),
@@ -88,9 +127,6 @@ pub fn make_triangle(device: Arc<Device>, queue: Arc<Queue>, size: u32, path: &s
     let vertex2 = Vertex { position: [ 0.0,  0.5] };
     let vertex3 = Vertex { position: [ 0.5, -0.25] };
 
-
-    use vulkano::buffer::CpuAccessibleBuffer;
-    use vulkano::buffer::BufferUsage;
 
     let vertex_buffer = CpuAccessibleBuffer::from_iter(device.clone(), BufferUsage::all(),
                                                        vec![vertex1, vertex2, vertex3].into_iter()).unwrap();

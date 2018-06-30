@@ -38,8 +38,8 @@ use vulkano::device::Device;
 use vulkano::device::Queue;
 
 pub fn make_mandelbrot(device: Arc<Device>, queue: Arc<Queue>, size: u32, path: &str) {
-    let shader = cs::Shader::load(device.clone())
-        .expect("failed to create shader module");
+
+    let shader = cs::Shader::load(device.clone()).expect("failed to create shader module");
 
     use vulkano::pipeline::ComputePipeline;
 
