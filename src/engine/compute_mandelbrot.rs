@@ -37,6 +37,8 @@ use std::sync::Arc;
 use vulkano::device::Device;
 use vulkano::device::Queue;
 
+use super::make_img_and_buf;
+
 pub fn make_mandelbrot(device: Arc<Device>, queue: Arc<Queue>, size: u32, path: &str) {
 
     let shader = cs::Shader::load(device.clone()).expect("failed to create shader module");
@@ -49,13 +51,7 @@ pub fn make_mandelbrot(device: Arc<Device>, queue: Arc<Queue>, size: u32, path: 
             .expect("failed to create compute pipeline"));
 
 
-    use vulkano::format::Format;
-    use vulkano::image::Dimensions;
-    use vulkano::image::StorageImage;
-
-    let image = StorageImage::new(device.clone(), Dimensions::Dim2d { width: size, height: size },
-                                  Format::R8G8B8A8Unorm, Some(queue.family())).unwrap();
-
+    let (image, buf) = make_img_and_buf(device.clone(), queue.clone(), size);
 
     use vulkano::descriptor::descriptor_set::PersistentDescriptorSet;
 
@@ -63,14 +59,6 @@ pub fn make_mandelbrot(device: Arc<Device>, queue: Arc<Queue>, size: u32, path: 
         .add_image(image.clone()).unwrap()
         .build().unwrap()
     );
-
-
-    use vulkano::buffer::CpuAccessibleBuffer;
-    use vulkano::buffer::BufferUsage;
-
-    let buf = CpuAccessibleBuffer::from_iter(device.clone(), BufferUsage::all(),
-                                             (0 .. size * size * 4).map(|_| 0u8))
-        .expect("failed to create buffer");
 
 
     use vulkano::command_buffer::AutoCommandBufferBuilder;

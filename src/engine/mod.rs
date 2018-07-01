@@ -12,12 +12,29 @@ use vulkano::instance::Instance;
 use vulkano::instance::InstanceExtensions;
 use vulkano::instance::LayerProperties;
 use vulkano::instance::PhysicalDevice;
-
+use vulkano::image::Dimensions;
+use vulkano::image::StorageImage;
+use vulkano::format::Format;
+use vulkano::buffer::CpuAccessibleBuffer;
+use vulkano::buffer::BufferUsage;
 
 pub mod compute_mandelbrot;
 
 pub mod graphics_triangle;
 
+
+pub fn make_img_and_buf(device: Arc<Device>, queue: Arc<Queue>, size: u32) ->
+        (Arc<StorageImage<Format>>, Arc<CpuAccessibleBuffer<[u8]>>) {
+
+    let image = StorageImage::new(device.clone(), Dimensions::Dim2d { width: size, height: size },
+                                  Format::R8G8B8A8Unorm, Some(queue.family())).unwrap();
+
+    let buf = CpuAccessibleBuffer::from_iter(device.clone(), BufferUsage::all(),
+                                             (0..size * size * 4).map(|_| 0u8))
+        .expect("failed to create buffer");
+
+    (image, buf)
+}
 
 pub fn initialize() -> (Arc<Instance>, Arc<Device>, Arc<Queue>, Arc<Queue>, Arc<Queue>) {
     let extensions = InstanceExtensions {
