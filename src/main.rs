@@ -4,6 +4,7 @@ extern crate vulkano;
 #[macro_use]
 extern crate vulkano_shader_derive;
 
+extern crate vulkano_win;
 extern crate image;
 
 
