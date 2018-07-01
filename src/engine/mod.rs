@@ -1,10 +1,18 @@
 use std::sync::Arc;
 
-use vulkano::instance::Instance;
-use vulkano::instance::PhysicalDevice;
+use vulkano_win;
+
 use vulkano::device::Device;
+use vulkano::device::DeviceExtensions;
 use vulkano::device::Queue;
+use vulkano::instance;
+use vulkano::instance::debug::{DebugCallback, MessageTypes};
+use vulkano::instance::Features;
+use vulkano::instance::Instance;
+use vulkano::instance::InstanceExtensions;
 use vulkano::instance::LayerProperties;
+use vulkano::instance::PhysicalDevice;
+
 
 pub mod compute_mandelbrot;
 
@@ -12,40 +20,60 @@ pub mod graphics_triangle;
 
 
 pub fn initialize() -> (Arc<Instance>, Arc<Device>, Arc<Queue>, Arc<Queue>, Arc<Queue>) {
-
-    use vulkano::instance::InstanceExtensions;
-    use vulkano_win;
-
     let extensions = InstanceExtensions {
         ext_debug_report: true,
         ..vulkano_win::required_extensions()
     };
 
+    let all_layers: Vec<LayerProperties> = instance::layers_list().unwrap().collect();
 
-    use vulkano::instance;
-
-    println!("List of Vulkan debugging layers available to use:");
-    let layers: Vec<_> = instance::layers_list().unwrap().collect();
-
-    for l in &layers {
-        println!("\t{}", l.name());
+    for layer in &all_layers {
+        println!("{:?} - {:?}", layer.name(), layer.description());
     }
 
+    let chosen_layers: Vec<String> = all_layers.iter()
+            .filter(|l| l.name().contains("validation"))
+            .map(|l| String::from(l.name()))
+            .collect();
 
-    let layer = layers.iter().find(|ref x| x.name() == "VK_LAYER_LUNARG_standard_validation");
-
-    match layer {
-        Some(layer) => println!("Found debug layer:\n\t{}\n", layer.name()),
-        None => println!("Found no debug layer"),
+    for layer in &chosen_layers {
+        println!("Validation: {:?}", layer);
     }
 
-    let used_layers = layer.map(|ref x| x.name().to_owned().as_str());
+    let used_layers: Vec<&str> = chosen_layers.iter().map(|ln| ln.as_str()).collect();
 
     let instance = Instance::new(
         None,
         &extensions,
-        used_layers)
+        used_layers.iter())
         .expect("failed to create instance");
+
+
+    let all = MessageTypes {
+        error: true,
+        warning: true,
+        performance_warning: true,
+        information: true,
+        debug: false,
+    };
+
+    let _debug_callback = DebugCallback::new(&instance, all, |msg| {
+        let ty = if msg.ty.error {
+            "error"
+        } else if msg.ty.warning {
+            "warning"
+        } else if msg.ty.performance_warning {
+            "performance_warning"
+        } else if msg.ty.information {
+            "information"
+        } else if msg.ty.debug {
+            "debug"
+        } else {
+            panic!("no-impl");
+        };
+        println!("{} {}: {}", msg.layer_prefix, ty, msg.description);
+    }).ok();
+
 
     let physical = PhysicalDevice::enumerate(&instance)
         .next()
@@ -57,11 +85,9 @@ pub fn initialize() -> (Arc<Instance>, Arc<Device>, Arc<Queue>, Arc<Queue>, Arc<
     }
 
     let queue_family = physical.queue_families()
-        .find(|&q| q.supports_graphics())
+        .find(|&q| q.supports_graphics() && q.supports_transfers())
         .expect("couldn't find a graphical queue family");
 
-    use vulkano::device::DeviceExtensions;
-    use vulkano::instance::Features;
 
     let (device, mut queues) = {
         Device::new(physical, &Features::none(), &DeviceExtensions::none(),
