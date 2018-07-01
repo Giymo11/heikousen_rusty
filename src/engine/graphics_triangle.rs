@@ -1,7 +1,11 @@
 use std::sync::Arc;
-
+use vulkano::buffer::BufferUsage;
+use vulkano::buffer::CpuAccessibleBuffer;
 use vulkano::device::Device;
 use vulkano::device::Queue;
+use vulkano::format::Format;
+use vulkano::image::Dimensions;
+use vulkano::image::StorageImage;
 
 
 mod vs {
@@ -69,7 +73,7 @@ fn make_image_and_buf<T, F>(device: Arc<Device>, queue: Arc<Queue>, size: u32) -
     use vulkano::buffer::BufferUsage;
 
     let buf = CpuAccessibleBuffer::from_iter(device.clone(), BufferUsage::all(),
-                                             (0 .. size * size * 4).map(|_| 0u8))
+                                             (0..size * size * 4).map(|_| 0u8))
         .expect("failed to create buffer");
 
 
@@ -78,7 +82,6 @@ fn make_image_and_buf<T, F>(device: Arc<Device>, queue: Arc<Queue>, size: u32) -
 */
 
 pub fn make_triangle(device: Arc<Device>, queue: Arc<Queue>, size: u32, path: &str) {
-
     let vs = vs::Shader::load(device.clone()).expect("failed to create shader module");
     let fs = fs::Shader::load(device.clone()).expect("failed to create shader module");
 
@@ -124,8 +127,8 @@ pub fn make_triangle(device: Arc<Device>, queue: Arc<Queue>, size: u32, path: &s
 
 
     let vertex1 = Vertex { position: [-0.5, -0.5] };
-    let vertex2 = Vertex { position: [ 0.0,  0.5] };
-    let vertex3 = Vertex { position: [ 0.5, -0.25] };
+    let vertex2 = Vertex { position: [0.0, 0.5] };
+    let vertex3 = Vertex { position: [0.5, -0.25] };
 
 
     let vertex_buffer = CpuAccessibleBuffer::from_iter(device.clone(), BufferUsage::all(),
@@ -158,9 +161,9 @@ pub fn make_triangle(device: Arc<Device>, queue: Arc<Queue>, size: u32, path: &s
         viewports: Some(vec![Viewport {
             origin: [0.0, 0.0],
             dimensions: [size as f32, size as f32],
-            depth_range: 0.0 .. 1.0,
+            depth_range: 0.0..1.0,
         }]),
-        .. DynamicState::none()
+        ..DynamicState::none()
     };
 
 
